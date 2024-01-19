@@ -1,0 +1,51 @@
+- name: "stop {{component}}"
+  tags:
+  - deployment
+  ansible.builtin.service:
+    name: "{{component}}"
+    state: stopped
+
+- name: Recursively remove app directory
+  tags:
+  - deployment
+  ansible.builtin.file:
+    path: /app
+    state: absent
+    #force: yes
+    #recurse: yes
+
+- name: create app directory
+  tags:
+  - deployment
+  ansible.builtin.file:
+    path: /app
+    state: directory
+
+- name: "download {{component}} application"
+  tags:
+  - deployment
+  ansible.builtin.get_url:
+    url: "https://roboshop-builds.s3.amazonaws.com/{{component}}.zip"
+    dest: /tmp
+
+- name: "extract {{component}} application"
+  tags:
+  - deployment
+  ansible.builtin.unarchive:
+    src: "/tmp/{{component}}.zip"
+    dest: /app
+    remote_src: yes
+
+- name: Install dependencies
+  tags:
+  - deployment
+  ansible.builtin.command: npm install
+  args:
+    chdir: /app
+
+- name: "restart {{component}}"
+  tags:
+  - deployment
+  ansible.builtin.service:
+    name: "{{component}}"
+    state: restarted
